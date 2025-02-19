@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Rock Paper Scissors Multiplayer</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="app" class="mobile-container">
+        <!-- Player Setup Screen -->
+        <section id="setup-screen" class="screen active">
+            <div class="logo-container">
+                <h1>Rock Paper Scissors</h1>
+                <div class="logo-icons">
+                    <img src="images/rock.png" alt="Rock" class="logo-icon">
+                    <img src="images/papper.png" alt="Paper" class="logo-icon">
+                    <img src="images/scissor.png" alt="Scissors" class="logo-icon">
+                </div>
+            </div>
+            
+            <div class="form-container">
+                <form id="join-form" autocomplete="off">
+                    <div class="input-group">
+                        <label for="player-name">Your Name</label>
+                        <input 
+                            type="text" 
+                            id="player-name" 
+                            name="player-name" 
+                            placeholder="Enter your name" 
+                            required 
+                            maxlength="20"
+                            autocomplete="off"
+                            inputmode="text"
+                        >
+                    </div>
+                    <div class="input-group">
+                        <label for="room-id">Room ID (Optional)</label>
+                        <input 
+                            type="text" 
+                            id="room-id" 
+                            name="room-id" 
+                            placeholder="Enter room ID" 
+                            maxlength="20"
+                            autocomplete="off"
+                            inputmode="text"
+                        >
+                    </div>
+                    <button type="submit" id="join-game" class="btn-primary">Start Game</button>
+                </form>
+            </div>
+        </section>
+
+        <!-- Waiting Area -->
+        <section id="waiting-screen" class="screen">
+            <div class="waiting-content">
+                <h2>Waiting for Opponent</h2>
+                <div id="player-count">0/2 Players</div>
+                <div class="spinner-container">
+                    <div class="spinner"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Countdown Screen -->
+        <section id="countdown-screen" class="screen">
+            <div id="countdown">3</div>
+        </section>
+
+        <!-- Game Area -->
+        <section id="game-screen" class="screen">
+            <div class="player-info-container">
+                <div id="player1-info" class="player-info">
+                    <span id="player1-display-name"></span>
+                    <span id="player1-score" class="score">0</span>
+                </div>
+                <div id="player2-info" class="player-info">
+                    <span id="player2-display-name"></span>
+                    <span id="player2-score" class="score">0</span>
+                </div>
+            </div>
+
+            <div id="game-status" class="game-status"></div>
+
+            <div class="game-choices-container">
+                <div class="player-choices-display">
+                    <div class="player-choice-wrapper">
+                        <div id="player1-choice-display" class="player-choice-display">
+                            <div class="choice-icon"></div>
+                            <span class="player-name"></span>
+                        </div>
+                    </div>
+                    <div class="vs-divider">VS</div>
+                    <div class="player-choice-wrapper">
+                        <div id="player2-choice-display" class="player-choice-display">
+                            <div class="choice-icon"></div>
+                            <span class="player-name"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="choice-selection-container">
+                    <div class="choice-grid">
+                        <div class="choice-wrapper">
+                            <div class="choice-item rock" data-choice="rock">
+                                <div class="choice-content">
+                                    <img src="images/rock.png" alt="Rock">
+                                </div>
+                            </div>
+                            <div class="choice-label">Rock</div>
+                        </div>
+                        
+                        <div class="choice-wrapper">
+                            <div class="choice-item paper" data-choice="paper">
+                                <div class="choice-content">
+                                    <img src="images/papper.png" alt="Paper">
+                                </div>
+                            </div>
+                            <div class="choice-label">Paper</div>
+                        </div>
+                        
+                        <div class="choice-wrapper">
+                            <div class="choice-item scissors" data-choice="scissors">
+                                <div class="choice-content">
+                                    <img src="images/scissor.png" alt="Scissors">
+                                </div>
+                            </div>
+                            <div class="choice-label">Scissors</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Game Over Screen -->
+        <section id="game-over-screen" class="screen game-over-screen">
+            <div class="game-over-actions">
+                <button id="restart-match-btn" class="action-button">Restart Match</button>
+                <button id="new-game-btn" class="action-button">New Game</button>
+            </div>
+        </section>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>
