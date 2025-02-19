@@ -134,10 +134,17 @@
         </section>
 
         <!-- Game Over Screen -->
-        <section id="game-over-screen" class="screen game-over-screen">
-            <div class="game-over-actions">
-                <button id="restart-match-btn" class="action-button">Restart Match</button>
-                <button id="new-game-btn" class="action-button">New Game</button>
+        <section id="game-over-screen" class="screen game-over-screen" style="display: none;">
+            <div class="game-over-container">
+                <div class="winner-announcement">
+                    <h2 id="winner-title">Congratulations!</h2>
+                    <div id="winner-name" class="winner-name"></div>
+                    <div id="winner-message" class="winner-message"></div>
+                </div>
+                <div class="game-over-actions">
+                    <button id="restart-match-btn" class="action-button">Restart Match</button>
+                    <button id="new-game-btn" class="action-button">New Game</button>
+                </div>
             </div>
         </section>
     </div>
