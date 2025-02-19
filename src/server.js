@@ -11,7 +11,7 @@ app.use(express.static(path.join(__dirname, '..', 'public')));
 
 const rooms = {};
 
-function determineWinner(player1Choice, player2Choice) {
+function determineWinner(player1Choice, player2Choice, player1Name, player2Name) {
     const winConditions = {
         'rock': 'scissors',
         'paper': 'rock',
@@ -19,10 +19,16 @@ function determineWinner(player1Choice, player2Choice) {
     };
 
     if (player1Choice === player2Choice) return 'Tie';
-    return winConditions[player1Choice] === player2Choice ? 'Player 1 Wins' : 'Player 2 Wins';
+    
+    if (winConditions[player1Choice] === player2Choice) {
+        return `${player1Name} Wins`;
+    } else {
+        return `${player2Name} Wins`;
+    }
 }
 
 function isGameOver(scores) {
+    // Game is over only when a player reaches exactly 3 points
     return scores.player1 === 3 || scores.player2 === 3;
 }
 
@@ -116,13 +122,18 @@ io.on('connection', (socket) => {
                 const player1Choice = room.choices.player1;
                 const player2Choice = room.choices.player2;
 
-                // Determine winner
-                const winResult = determineWinner(player1Choice.choice, player2Choice.choice);
+                // Determine winner using player names
+                const winResult = determineWinner(
+                    player1Choice.choice, 
+                    player2Choice.choice, 
+                    player1Choice.playerName, 
+                    player2Choice.playerName
+                );
                 
                 // Update scores
-                if (winResult === 'Player 1 Wins') {
+                if (winResult === `${player1Choice.playerName} Wins`) {
                     room.scores.player1++;
-                } else if (winResult === 'Player 2 Wins') {
+                } else if (winResult === `${player2Choice.playerName} Wins`) {
                     room.scores.player2++;
                 }
 
@@ -137,9 +148,9 @@ io.on('connection', (socket) => {
                     gameOver: isGameOver(room.scores)
                 };
 
-                // If game is over, determine final winner
+                // If game is completely over, determine final winner
                 if (gameResult.gameOver) {
-                    gameResult.finalWinner = room.scores.player1 > room.scores.player2 
+                    gameResult.finalWinner = room.scores.player1 === 3 
                         ? room.players[0].name 
                         : room.players[1].name;
                 }
@@ -181,24 +192,6 @@ io.on('connection', (socket) => {
                     resetPoints: resetPoints
                 });
             }
-        }
-    });
-
-    socket.on('restart_match', (data) => {
-        const { roomId, playerName } = data;
-        const room = rooms[roomId];
-
-        if (room) {
-            // Reset room state
-            room.choices = {};
-            room.scores = { player1: 0, player2: 0 };
-            room.readyToRestart = [];
-
-            // Notify all players in the room that match is restarted
-            io.to(roomId).emit('match_restarted', {
-                message: 'Match restarted',
-                players: room.players.map(p => p.name)
-            });
         }
     });
 
