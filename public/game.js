@@ -24,10 +24,15 @@ const player2ChoiceDisplay = document.getElementById('player2-choice-display');
 const gameStatus = document.getElementById('game-status');
 
 const choiceWrappers = document.querySelectorAll('.choice-wrapper');
-const restartMatchBtn = document.getElementById('restart-match');
-const newGameBtn = document.getElementById('new-game');
+const restartMatchBtn = document.getElementById('restart-match-btn');
+const newGameBtn = document.getElementById('new-game-btn');
 const countdownDisplay = document.getElementById('countdown');
 const playerCountDisplay = document.getElementById('player-count');
+
+// Winner Announcement Elements
+const winnerTitle = document.getElementById('winner-title');
+const winnerNameDisplay = document.getElementById('winner-name');
+const winnerMessageDisplay = document.getElementById('winner-message');
 
 let currentPlayer = {
     name: '',
@@ -40,12 +45,50 @@ let opponentPlayer = {
     number: null
 };
 
+// Game State Management
+let gameState = {
+    currentScreen: 'setup',
+    isGameRunning: false,
+    isGameOver: false
+};
+
+// Screen Switching Function
 function switchScreen(targetScreen) {
+    // Hide all screens
     Object.values(screens).forEach(screen => {
         screen.classList.remove('active');
     });
+
+    // Update current screen
+    gameState.currentScreen = targetScreen.id;
+
+    // Show target screen
     targetScreen.classList.add('active');
+
+    // Manage game state
+    gameState.isGameRunning = targetScreen === screens.game;
+    gameState.isGameOver = targetScreen === screens.gameOver;
+
+    // Hide game over actions if not in game over state
+    if (!gameState.isGameOver) {
+        hideGameOverActions();
+    }
 }
+
+// Game Over and Restart Functionality
+function hideGameOverActions() {
+    restartMatchBtn.style.display = 'none';
+    newGameBtn.style.display = 'none';
+}
+
+// Show restart and new game buttons when game is over
+function showGameOverActions() {
+    restartMatchBtn.style.display = 'block';
+    newGameBtn.style.display = 'block';
+}
+
+// Initialize game over actions as hidden
+hideGameOverActions();
 
 function updatePlayerDisplay(player1Name, player2Name) {
     player1DisplayName.textContent = player1Name;
@@ -130,8 +173,13 @@ roomIdInput.addEventListener('input', () => {
 });
 
 joinForm.addEventListener('submit', (event) => {
-    event.preventDefault(); // Prevent default form submission
+    event.preventDefault();
     event.stopPropagation();
+
+    // Reset game state
+    gameState.isGameRunning = false;
+    gameState.isGameOver = false;
+    hideGameOverActions();
 
     // Validate inputs
     const isPlayerNameValid = validateInput(playerNameInput);
@@ -183,6 +231,10 @@ socket.on('room_update', (data) => {
 });
 
 socket.on('game_start', () => {
+    // Reset game state when game starts
+    gameState.isGameRunning = true;
+    gameState.isGameOver = false;
+    hideGameOverActions();
     startCountdown();
 });
 
@@ -210,6 +262,15 @@ choiceWrappers.forEach(wrapper => {
         });
     });
 });
+
+// Congratulatory Messages
+const congratsMessages = [
+    "What an epic victory!",
+    "You're the champion of Rock Paper Scissors!",
+    "Absolutely dominating the game!",
+    "Legendary performance!",
+    "Master of strategy right here!"
+];
 
 socket.on('game_result', (data) => {
     // Reset previous state
@@ -257,13 +318,89 @@ socket.on('game_result', (data) => {
         });
     }, 3000);
 
-    // Check if game is over
-    if (data.gameOver) {
+    // Check if game is completely over (one player reaches 3 points)
+    if (data.gameOver && (data.scores.player1 === 3 || data.scores.player2 === 3)) {
         setTimeout(() => {
+            // Update game state
+            gameState.isGameRunning = false;
+            gameState.isGameOver = true;
+
+            // Determine winner
+            const winner = data.finalWinner;
+            
+            // Select a random congratulatory message
+            const randomMessage = congratsMessages[Math.floor(Math.random() * congratsMessages.length)];
+
+            // Update winner display
+            winnerNameDisplay.textContent = winner;
+            winnerMessageDisplay.textContent = randomMessage;
+
+            // Animate winner title
+            winnerTitle.classList.add('animated-title');
+
+            // Show game over actions
+            showGameOverActions();
+
+            // Switch to game over screen
             switchScreen(screens.gameOver);
         }, 3000);
     }
 });
+
+// Restart Match Button Logic
+restartMatchBtn.addEventListener('click', () => {
+    socket.emit('player_ready_to_restart', { 
+        roomId: currentPlayer.roomId, 
+        resetPoints: true  // Reset points
+    });
+
+    // Hide game over actions
+    hideGameOverActions();
+});
+
+// New Game Button Logic
+newGameBtn.addEventListener('click', () => {
+    // Emit event to server to leave the current room
+    socket.emit('leave_room', { 
+        roomId: currentPlayer.roomId, 
+        playerName: currentPlayer.name 
+    });
+    
+    // Reset to player setup screen
+    switchScreen(screens.setup);
+});
+
+socket.on('restart_game_status', (data) => {
+    if (data.bothReady) {
+        // Reset game state
+        gameState.isGameRunning = true;
+        gameState.isGameOver = false;
+
+        // Switch back to game screen
+        switchScreen(screens.game);
+
+        // Reset scores if requested
+        if (data.resetPoints) {
+            player1ScoreDisplay.textContent = '0';
+            player2ScoreDisplay.textContent = '0';
+        }
+    }
+});
+
+// Add some additional styling for the animated title
+const style = document.createElement('style');
+style.textContent = `
+    .animated-title {
+        animation: celebration 1s ease-in-out infinite alternate;
+    }
+
+    @keyframes celebration {
+        0% { transform: scale(1) rotate(0deg); }
+        50% { transform: scale(1.1) rotate(5deg); }
+        100% { transform: scale(1) rotate(-5deg); }
+    }
+`;
+document.head.appendChild(style);
 
 // Game Restart and New Game Functionality
 function resetGameState() {
@@ -285,25 +422,6 @@ function resetGameState() {
     // Switch back to game screen
     switchScreen(screens.game);
 }
-
-restartMatchBtn.addEventListener('click', () => {
-    // Emit event to server to restart the match in the same room
-    socket.emit('restart_match', { 
-        roomId: currentPlayer.roomId, 
-        playerName: currentPlayer.name 
-    });
-});
-
-newGameBtn.addEventListener('click', () => {
-    // Emit event to server to create a new room
-    socket.emit('leave_room', { 
-        roomId: currentPlayer.roomId, 
-        playerName: currentPlayer.name 
-    });
-    
-    // Reset to player setup screen
-    switchScreen(screens.setup);
-});
 
 // Add server-side event listeners for restart and new game
 socket.on('match_restarted', (data) => {
